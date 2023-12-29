@@ -122,6 +122,7 @@ export class BigQueryAdapter extends Adapter implements IAdapter {
     updatePartitionFilter: string
   ) {
     const backtickedColumns = columns.map(column => `\`${column}\``);
+    const mergeColumns = this.mapColumnMergeMethod(columns, this.mergeOverrideColumns);
     return `
 merge ${this.resolveTarget(target)} T
 using (${query}
@@ -129,8 +130,56 @@ using (${query}
 on ${uniqueKey.map(uniqueKeyCol => `T.${uniqueKeyCol} = S.${uniqueKeyCol}`).join(` and `)}
   ${updatePartitionFilter ? `and T.${updatePartitionFilter}` : ""}
 when matched then
-  update set ${columns.map(column => `\`${column}\` = S.${column}`).join(",")}
+  update set ${mergeColumns.map(obj => `\`${obj.column}\` = ${obj.statement}`).join(",")}
 when not matched then
   insert (${backtickedColumns.join(",")}) values (${backtickedColumns.join(",")})`;
+  }
+
+  // MXK TODO: Replace with dynamic argument in fuction
+  private mergeOverrideColumns: any[] = [
+    {
+      column: "latest_insert_timestamp",
+      aggregation: "greatest"
+    },
+    {
+      column: "value",
+      aggregation: "add"
+    }
+  ]
+
+  private mapColumnMergeMethod(columns: string[], mergeColumns: any[]): any[] {
+    const columnMappings: any[] = [];
+    columns.forEach((col) => {
+      const obj: any = mergeColumns.find((e) => { return e.column === col })
+      let txt: string;
+      if (!!obj) {
+        switch (obj.aggregation) {
+          case "replace":
+            txt = `S.${col}`;
+            break;
+          case "ignore":
+            txt = `T.${col}`;
+            break;
+          case "greatest":
+            txt = `greatest(S.${col}, T.${col})`;
+            break;
+          case "least":
+            txt = `least(S.${col}, T.${col})`;
+            break;
+          // MXK TODO: Check that column type is a number
+          case "add":
+            txt = `S.${col} + T.${col}`;
+            break;
+        }
+      } else {
+        txt = `S.${col}`;
+      }
+      columnMappings.push({
+        column: col,
+        statement: txt
+      })
+    })
+
+    return columnMappings;
   }
 }
