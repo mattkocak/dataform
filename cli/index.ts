@@ -168,6 +168,7 @@ const jobPrefixOption: INamedOption<yargs.Options> = {
 const testConnectionOptionName = "test-connection";
 
 const watchOptionName = "watch";
+const replaceCoreOptionName = "replace-core";
 
 const dryRunOptionName = "dry-run";
 const runTestsOptionName = "run-tests";
@@ -312,6 +313,14 @@ export function runCli() {
             name: watchOptionName,
             option: {
               describe: "Whether to watch the changes in the project directory.",
+              type: "boolean",
+              default: false
+            }
+          },
+          {
+            name: replaceCoreOptionName,
+            option: {
+              describe: "For Dataform core development purposes. Whether to replace the Dataform core build in the project directory with changes present in the current directory.",
               type: "boolean",
               default: false
             }
