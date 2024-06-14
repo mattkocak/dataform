@@ -1,5 +1,20 @@
 #!/bin/bash
 set -e
 
+replace_core=false
+
+for arg in "$@"; do
+  if [ "$arg" == "--replace-core" ]; then
+    replace_core=true
+    break
+  fi
+done
+
+if [ $1 == "compile" -a $replace_core == true ]; then
+  echo "replace core"
+else
+  echo "don't replace core"
+fi
+
 bazel build //packages/@dataform/cli:bin
 ./bazel-bin/packages/@dataform/cli/bin.sh "$@"
