@@ -10,10 +10,11 @@ for arg in "$@"; do
   fi
 done
 
-if [ $1 == "compile" -a $replace_core == true ]; then
-  echo "replace core"
-else
-  echo "don't replace core"
+if [ $# -ge 3 -a $1 == "compile" -a $replace_core == true ]; then
+  echo "Replacing Dataform core in project directory..."
+  bazel build packages/@dataform/core:bundle.js && \
+    cp bazel-bin/packages/@dataform/core/bundle.js $2/node_modules/@dataform/core/
+  echo "Dataform core replaced in project directory"
 fi
 
 bazel build //packages/@dataform/cli:bin
